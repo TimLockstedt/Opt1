@@ -5,14 +5,25 @@ import numpy as np
 def J (x, dt, x_data):
     result = 0
     for i in range(len(x)):
-        dt * np.abs(x[i] - x_data[i])**2
+        result += dt * np.abs(x[i] - x_data[i])**2
     return result
 
 def f (d, v_max, model = "log"):
     if model == "log":
-        return np.min([v_max * np.log(d), v_max]) # Limit v_max, wie im linearen modell
+        return np.min([v_max * np.log(d), v_max], 1) # Limit v_max, wie im linearen modell
     else: # lin
         return v_max * (1 - 1/d)
+	
+def single_step(x, v_max, L, dt, model):
+    N = len(x) # Number of initial values == number of vehicles in traffic
+    dx = np.zeros(N) # momente initialisieren
+    # Leader
+    # dx[-1] = v_max
+    dist = d(x)/L
+    # for i in range(N):
+    #         dx[i] = f(dist[i], v_max, model)
+    dx = f(dist, v_max, model)
+    return x + dt * dx, dx
     
 # Den mittlwert von J jederzeit ausgeben können:
 class J_mittel():
@@ -51,6 +62,9 @@ class data_class():
 	__t = np.ndarray
 	__counter = 0
 	__unterCounter = 0
+	__xIt = np.ndarray
+	__tIt = np.ndarray
+	__ItError = np.ndarray
 
 	def get_x(self):
 		return self.__x
@@ -95,6 +109,53 @@ class data_class():
 		if i == self.__unterCounter:
 			self.__unterCounter += 1
 		return xVals, tVal
+	
+	# def d(self, x:np.ndarray): # Abstandsfunktion
+	# 	d = np.ones_like(x) * np.inf # anfangs distanz auf sehr groß setzen
+	# 	order_mask = np.argsort(x) # nach i-ter achse sortieren, hier x achse -> 0
+	# 	x_ordered = x[order_mask]
+	# 	for i, x_i in enumerate(x_ordered):
+	# 		for j, x_j in enumerate(x_ordered[i+1:]): # nur Werte mit größerem Index (i+1) sind für den vergleich relevant, da nur diese vor dem Auto sind.
+	# 			dist = np.linalg.norm(x_j - x_i)
+	# 			d[i] = dist if d[i] > dist else d[i]
+	# 	return d
+
+
+	def LinInterplation(self, dt=0.001):
+		ort = self.__x
+		zeit = self.__t
+		zeit_int = np.arange(zeit[0], zeit[-1], dt)
+		ort_int = np.zeros((ort.shape[0], len(zeit_int)))
+		for i, auto in enumerate(ort):
+			steigung = (np.max(auto)-np.min(auto))/(np.max(zeit)-np.min(zeit))
+			ort_int[i,:] = steigung * np.arange(0, np.max(zeit)-np.min(zeit), dt) + np.min(auto)
+
+		self.__xIt = ort_int
+		self.__tIt = zeit_int
+		return ort_int, zeit_int
+	
+	def switch_iteration(self):
+		copy_x = self.__x.copy()
+		copy_t = self.__t.copy()
+		self.__x = self.__xIt 
+		self.__t = self.__tIt 
+		self.__xIt = copy_x
+		self.__tIt = copy_t
+	
+
+	def test_interpolation(self, dt):
+		rel_fehler = np.zeros(self.__x.shape[0])
+		for i, auto in enumerate(self.__x):
+			for x, t in zip(auto, self.__t):
+				index = np.where((self.__tIt >= (t - dt/2)) & (self.__tIt <= (t + dt/2)))[0]
+				if len(index) != 0:
+					abs_fehler = np.abs(x-self.__xIt[i, index])
+					rel_fehler[i] = rel_fehler[i] + abs_fehler/np.abs(x)
+		avg_fehler = rel_fehler/len(self.__t)
+		if np.sum(avg_fehler >= 0.05) > 1:
+			print("ACHTUNG mindestenz einmal eine größere Abweichung als 5%")
+		self.__ItError = avg_fehler
+		return avg_fehler
 
     
 def d(x:np.ndarray): # Abstandsfunktion
@@ -106,3 +167,28 @@ def d(x:np.ndarray): # Abstandsfunktion
 			dist = np.linalg.norm(x_j - x_i)
 			d[i] = dist if d[i] > dist else d[i]
 	return d
+
+
+def LinInterplation(data, dt=0.001):
+	ort = data.get_x()
+	zeit = data.get_t()
+	zeit_int = np.arange(zeit[0], zeit[-1], dt)
+	ort_int = np.zeros((ort.shape[0], len(zeit_int)))
+	for i, auto in enumerate(ort):
+		steigung = (np.max(auto)-np.min(auto))/(np.max(zeit)-np.min(zeit))
+		ort_int[i,:] = steigung * np.arange(0, np.max(zeit)-np.min(zeit), dt) + np.min(auto)
+	return ort_int, zeit_int
+
+def test_interpolation(data, ort_int, zeit_int, dt):
+	ort, zeit = data.get_x(), data.get_t()
+	rel_fehler = np.zeros(ort.shape[0])
+	for i, auto in enumerate(ort):
+		for x, t in zip(auto, zeit):
+			index = np.where((zeit_int >= (t - dt/2)) & (zeit_int <= (t + dt/2)))[0]
+			if len(index) != 0:
+				abs_fehler = np.abs(x-ort_int[i, index])
+				rel_fehler[i] = rel_fehler[i] + abs_fehler/np.abs(x)
+	avg_fehler = rel_fehler/len(zeit)
+	if np.sum(avg_fehler >= 0.05) > 1:
+		print("ACHTUNG mindestenz einmal eine größere Abweichung als 5%")
+	return avg_fehler
