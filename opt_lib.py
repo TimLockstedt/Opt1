@@ -66,10 +66,19 @@ class data_class():
 	__tIt = np.ndarray
 	__ItError = np.ndarray
 
+ 
+	def get_len(self):
+		return self.__len
 	def get_x(self):
 		return self.__x
 	def get_t(self):
 		return self.__t
+	def get_tIt(self):
+		return self.__tIt
+	def get_xIt(self):
+		return self.__xIt
+	def get_ItError(self):
+		return self.__ItError
 	def set_x(self, x):
 		self.__x = x
 		return 
@@ -89,15 +98,26 @@ class data_class():
 		self.__x = np.array(self.__data[x][0].get("Xarr"))
 		self.__t = np.array(self.__data[x][0].get("Tarr"))
 		return 
-	def next_dataset(self):
-		if self.__counter < self.__len - 1:
-			self.__counter += 1
-			self.setXYTFromData(self.__counter)
-			return
+	def next_dataset(self, dataset_num = None):
+		if dataset_num == None:
+			if self.__counter < self.__len - 1:
+				self.__counter += 1
+				self.setXYTFromData(self.__counter)
+				return
+			else:
+				self.__counter += 1
+				print(f"Error: Index {self.__counter} is out of range of the dataset with length {self.__len} !!!")
+				return
 		else:
-			self.__counter += 1
-			print(f"Error: Index {self.__counter} is out of range of the dataset with length {self.__len} !!!")
-			return
+			if dataset_num < self.__len - 1:
+				self.__counter = dataset_num
+				self.setXYTFromData(self.__counter)
+				return
+			else:
+				self.__counter = dataset_num
+				print(f"Error: Index {self.__counter} is out of range of the dataset with length {self.__len} !!!")
+				return
+
 	def getCurrentCoords(self, i=None):
 		if i == None:
 			i = self.__unterCounter
@@ -122,6 +142,9 @@ class data_class():
 
 
 	def LinInterplation(self, dt=0.001):
+		if np.sum(self.test_correl() >= 0.03) >= 1:
+			print(f"ACHTUNG mindestenz einmal eine größere Abweichung als {0.03}")
+		
 		ort = self.__x
 		zeit = self.__t
 		zeit_int = np.arange(zeit[0], zeit[-1], dt)
@@ -132,6 +155,7 @@ class data_class():
 
 		self.__xIt = ort_int
 		self.__tIt = zeit_int
+		# self.test_interpolation(dt)
 		return ort_int, zeit_int
 	
 	def switch_iteration(self):
@@ -142,6 +166,15 @@ class data_class():
 		self.__xIt = copy_x
 		self.__tIt = copy_t
 	
+	def test_correl(self, limit = 0.03):	
+		corell = np.zeros(self.__x.shape[0])
+		for i, auto in enumerate(self.__x):
+			corell[i] = 1 - np.corrcoef(self.__t, auto)[0, 1]
+		if np.sum(corell >= limit) >= 1:
+			print(f"ACHTUNG mindestenz einmal eine größere Abweichung als {limit}")
+		self.__ItError = corell
+		return corell
+
 
 	def test_interpolation(self, dt):
 		rel_fehler = np.zeros(self.__x.shape[0])
