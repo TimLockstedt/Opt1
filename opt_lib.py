@@ -53,7 +53,6 @@ class J_mittel():
         self.__val += x
         self.__n += 1
         return
-    
 
 class data_class():
 	__data = []
@@ -66,7 +65,7 @@ class data_class():
 	__tIt = np.ndarray
 	__ItError = np.ndarray
 
- 
+
 	def get_len(self):
 		return self.__len
 	def get_x(self):
@@ -129,7 +128,7 @@ class data_class():
 		if i == self.__unterCounter:
 			self.__unterCounter += 1
 		return xVals, tVal
-	
+
 	# def d(self, x:np.ndarray): # Abstandsfunktion
 	# 	d = np.ones_like(x) * np.inf # anfangs distanz auf sehr groß setzen
 	# 	order_mask = np.argsort(x) # nach i-ter achse sortieren, hier x achse -> 0
@@ -141,23 +140,6 @@ class data_class():
 	# 	return d
 
 
-	def LinInterplation(self, dt=0.001):
-		if np.sum(self.test_correl() >= 0.03) >= 1:
-			print(f"ACHTUNG mindestenz einmal eine größere Abweichung als {0.03}")
-		
-		ort = self.__x
-		zeit = self.__t
-		zeit_int = np.arange(zeit[0], zeit[-1], dt)
-		ort_int = np.zeros((ort.shape[0], len(zeit_int)))
-		for i, auto in enumerate(ort):
-			steigung = (np.max(auto)-np.min(auto))/(np.max(zeit)-np.min(zeit))
-			ort_int[i,:] = steigung * np.arange(0, np.max(zeit)-np.min(zeit), dt) + np.min(auto)
-
-		self.__xIt = ort_int
-		self.__tIt = zeit_int
-		# self.test_interpolation(dt)
-		return ort_int, zeit_int
-	
 	def switch_iteration(self):
 		copy_x = self.__x.copy()
 		copy_t = self.__t.copy()
@@ -165,7 +147,7 @@ class data_class():
 		self.__t = self.__tIt 
 		self.__xIt = copy_x
 		self.__tIt = copy_t
-	
+
 	def test_correl(self, limit = 0.03):	
 		corell = np.zeros(self.__x.shape[0])
 		for i, auto in enumerate(self.__x):
@@ -189,6 +171,39 @@ class data_class():
 			print("ACHTUNG mindestenz einmal eine größere Abweichung als 5%")
 		self.__ItError = avg_fehler
 		return avg_fehler
+
+	def LinApprox(self, dt=0.001):
+		if np.sum(self.test_correl() >= 0.03) >= 1:
+			print(f"ACHTUNG mindestenz einmal eine größere Abweichung als {0.03}")
+		
+		ort = self.__x
+		zeit = self.__t
+		zeit_int = np.arange(zeit[0], zeit[-1], dt)
+		ort_int = np.zeros((ort.shape[0], len(zeit_int)))
+		for i, auto in enumerate(ort):
+			steigung = (np.max(auto)-np.min(auto))/(np.max(zeit)-np.min(zeit))
+			ort_int[i,:] = steigung * np.arange(0, np.max(zeit)-np.min(zeit), dt) + np.min(auto)
+
+		self.__xIt = ort_int
+		self.__tIt = zeit_int
+		# self.test_interpolation(dt)
+		return ort_int, zeit_int
+
+
+	def LinInterplation(self, dt=0.001):
+		if np.sum(self.test_correl() >= 0.03) >= 1:
+			print(f"ACHTUNG mindestenz einmal eine größere Abweichung als {0.03}")
+		
+		ort = self.__x
+		zeit = self.__t
+		zeit_int = np.arange(zeit[0], zeit[-1], dt)
+		ort_int = np.zeros((ort.shape[0],*zeit_int.shape))
+		for i, auto in enumerate(ort):
+			ort_int[i, :] = np.interp(zeit_int, zeit, auto)
+		self.__xIt = ort_int
+		self.__tIt = zeit_int
+		# self.test_interpolation(dt)
+		return ort_int, zeit_int
 
     
 def d(x:np.ndarray): # Abstandsfunktion
