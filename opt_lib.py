@@ -210,11 +210,12 @@ def d(x:np.ndarray): # Abstandsfunktion
 	d = np.ones_like(x) * np.inf # anfangs distanz auf sehr groß setzen
 	order_mask = np.argsort(x) # nach i-ter achse sortieren, hier x achse -> 0
 	x_ordered = x[order_mask]
-	for i, x_i in enumerate(x_ordered):
-		for j, x_j in enumerate(x_ordered[i+1:]): # nur Werte mit größerem Index (i+1) sind für den vergleich relevant, da nur diese vor dem Auto sind.
-			dist = np.linalg.norm(x_j - x_i)
-			d[i] = dist if d[i] > dist else d[i]
-	return d
+	for i in range(len(x_ordered)-1):
+		dist = np.linalg.norm(x_ordered[i] - x_ordered[i+1]) # Da die werte geordnet sind, muss nur die Distanz zum nächsten auto berücksichtigt werden
+		d[i] = dist if d[i] > dist else d[i]
+			
+	reordered_d = d[np.argsort(order_mask)]
+	return reordered_d
 
 
 def LinInterplation(data, dt=0.001):
