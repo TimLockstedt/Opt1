@@ -123,7 +123,7 @@ class data_class():
 		self.__gesJ.append(self.__J)
 		return	self.__numx
 
-	def f (self, d, v_max, model = "log"):
+	def f(self, d, v_max, model = "log"):
 		if model == "log":
 			v = v_max * np.log(d)
 			v[-1] = v_max		
