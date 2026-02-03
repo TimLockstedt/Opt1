@@ -17,7 +17,9 @@ class data_class():
 	__gesx = []
 	__gesnumx = []
 	__gesJ = []
-
+	__gesT = []
+	def get_gesT(self):
+		return self.__gesT
 	def get_gesJ(self):
 		return self.__gesJ
 	def get_d(self):
@@ -104,7 +106,7 @@ class data_class():
 	def J(self, x, dt, x_data):
 		return np.sum(dt * np.power(np.linalg.norm(x - x_data, axis=0), 2))
 	
-	def set_numx(self, dt, L, v_max, n_dataset = __counter, model = "log"):
+	def set_numx(self, dt, L, v_max, n_dataset = __counter, model = "log", save=False):
 		self.next_dataset(n_dataset) # auf den gewollten Datensatz wechseln
 		self.LinInterplation(dt) # durchschnittlicher Fehler der Interpolation abfragen
 		self.switch_iteration() # Die interpolierten werte als zu berücksichtigende Daten setzen
@@ -118,9 +120,11 @@ class data_class():
 			self.__numx[:,i] = x
 			t += dt
 		self.__J = self.J(self.__numx, dt, self.__x) # Loss berechnen
-		self.__gesx.append(self.__x)
-		self.__gesnumx.append(self.__numx)
-		self.__gesJ.append(self.__J)
+		if save:
+			self.__gesx.append(self.__x)
+			self.__gesnumx.append(self.__numx)
+			self.__gesJ.append(self.__J)
+			self.__gesT.append(self.__t)
 		return	self.__numx
 
 	def f (self, d, v_max, model = "log"):
