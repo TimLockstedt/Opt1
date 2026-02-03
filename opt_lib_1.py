@@ -123,7 +123,7 @@ class data_class():
 		self.__gesJ.append(self.__J)
 		return	self.__numx
 
-	def f(self, d, v_max, model = "log"):
+	def f (self, d, v_max, model = "log"):
 		if model == "log":
 			v = v_max * np.log(d)
 			v[-1] = v_max		
@@ -230,14 +230,14 @@ class data_class():
 			p1[-i-1] = p
 		return p1
 
-	def p2_N_1(self, dt, pi_1, d, n, v_max): # n tes auto
+	def p2_N_1(self, dt, pi_1, dvorn, n, v_max, dhinten): # n tes auto
 		pi = np.zeros_like(self.get_x()[1:-1,:])[0] # anpassen
 		t_arr = np.flip(self.get_t())
 		for i, j in enumerate(t_arr):
 			if i == 0:
 				p = 0
 			else:
-				p = p + dt * 2*(self.get_numx()[n,-i-1]-self.get_x()[n,-i-1]) - dt * p * (v_max/d[-i-1]) + dt * pi_1[-i-1] * v_max/d[-i-1]
+				p = p + dt * 2*(self.get_numx()[n,-i-1]-self.get_x()[n,-i-1]) - dt * p * (v_max/dvorn[-i-1]) + dt * pi_1[-i-1] * v_max/dhinten[-i-1]
 			pi[-i-1] = p
 		return pi
 
@@ -257,7 +257,7 @@ class data_class():
 		pges = np.zeros_like(self.get_x())
 		pges[0,:] = self.p1(dt, v_max, darr[:,0])
 		for n in range(1, pges.shape[0]-1):
-			pges[n,:] = self.p2_N_1(dt, pges[n-1,:], darr[:,n], n, v_max)
+			pges[n,:] = self.p2_N_1(dt, pges[n-1,:], darr[:,n], n, v_max, darr[:,n-1])
 		pges[n+1,:] = self.pN(dt, pges[n,:], darr[:,-1], v_max)
 		return pges
 
