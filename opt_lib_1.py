@@ -198,8 +198,8 @@ class data_class():
 
 
 	def LinInterplation(self, dt=0.001):
-		if np.sum(self.test_correl() >= 0.03) >= 1:
-			print(f"ACHTUNG mindestenz einmal eine größere Abweichung als {0.03}")
+		# if np.sum(self.test_correl() >= 0.03) >= 1:
+		# 	print(f"ACHTUNG mindestenz einmal eine größere Abweichung als {0.03}")
 		
 		ort = self.__x
 		zeit = self.__t
